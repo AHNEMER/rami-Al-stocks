@@ -8,7 +8,18 @@ import streamlit.components.v1 as components
 import time
 
 # --- Configuration & UI Setup ---
-st.set_page_config(page_title="رامي السهم", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
+def is_mobile_device():
+    try:
+        user_agent = st.context.headers.get("User-Agent", "").lower()
+        mobile_kw = ["mobi", "android", "iphone", "ipad", "ipod"]
+        return any(kw in user_agent for kw in mobile_kw)
+    except:
+        return False
+
+is_mobile = is_mobile_device()
+init_state = "collapsed" if is_mobile else "expanded"
+
+st.set_page_config(page_title="رامي السهم", page_icon="📈", layout="wide", initial_sidebar_state=init_state)
 # Injecting Custom CSS for a Premium Look
 st.markdown("""
 <style>
@@ -706,6 +717,8 @@ with st.sidebar:
 
                         if st.button(btn_label, key=f"btn_{dcode}", use_container_width=True):
                             st.session_state.selected_ticker = list_ticker
+                            if is_mobile:
+                                st.session_state.close_mobile_sidebar = True
                             st.rerun()
                             
                 except Exception as e:
@@ -855,3 +868,21 @@ with col2:
              st.error("بيانات غير كافية لحساب المؤشرات. يرجى تجربة سهم آخر.")       
     else:
         st.error("خطأ في جلب البيانات. يرجى التأكد من صحة رمز السهم (مثال: 2222 لشركة أرامكو السعودية).")
+
+# --- Mobile Sidebar Auto-Close Injection ---
+if st.session_state.get("close_mobile_sidebar", False):
+    st.session_state.close_mobile_sidebar = False
+    components.html(
+        """
+        <script>
+        setTimeout(function() {
+            var sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                var closeBtn = sidebar.querySelector('button');
+                if (closeBtn) closeBtn.click();
+            }
+        }, 100);
+        </script>
+        """,
+        height=0, width=0
+    )
