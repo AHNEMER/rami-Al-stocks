@@ -1,5 +1,5 @@
 streamlit
-yfinance>=0.2.61
+yfinance>=1.2.1
 curl_cffi
 pandas
 pandas-ta
