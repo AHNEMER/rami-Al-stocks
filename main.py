@@ -876,16 +876,19 @@ with col2:
 # --- Mobile Sidebar Auto-Close Injection ---
 if st.session_state.get("close_mobile_sidebar", False):
     st.session_state.close_mobile_sidebar = False
+    import uuid
+    run_id = uuid.uuid4().hex
     components.html(
-        """
+        f"""
         <script>
-        setTimeout(function() {
+        // Force Streamlit to re-execute this script by making the string unique: {run_id}
+        setTimeout(function() {{
             var sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-            if (sidebar) {
+            if (sidebar) {{
                 var closeBtn = sidebar.querySelector('button');
                 if (closeBtn) closeBtn.click();
-            }
-        }, 100);
+            }}
+        }}, 300);
         </script>
         """,
         height=0, width=0
