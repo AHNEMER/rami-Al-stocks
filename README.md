@@ -6,12 +6,12 @@ Arabic-first Streamlit app for analyzing Saudi stocks (Tadawul) using price beha
 
 `Rami Al Stocks` helps traders and investors quickly evaluate Saudi equities by combining:
 
-- live market data from Yahoo Finance (`yfinance`)
-- yearly moving average context (long-term trend)
-- Bollinger channel position (possible rebound/overextension zones)
-- clear recommendation cards and watchlist navigation
+- Live market data from Yahoo Finance (`yfinance`) with advanced rate-limit bypassing.
+- Yearly moving average context (long-term trend).
+- Bollinger channel position (possible rebound/overextension zones).
+- Clear recommendation cards and watchlist navigation.
 
-The interface is optimized for Arabic users and includes right-to-left layout support.
+The interface is optimized for Arabic users and includes right-to-left layout support. It is built to seamlessly deploy and run smoothly on **Streamlit Community Cloud**.
 
 ## Key Features
 
@@ -20,27 +20,37 @@ The interface is optimized for Arabic users and includes right-to-left layout su
 - **Sidebar watchlist:** Browse major Tadawul stocks from a prepared list.
 - **Stock analysis panel:** Current price, yearly average, and indicator-based guidance.
 - **Interactive chart:** Plotly chart for price history and indicator bands.
-- **Dividend badge:** Shows when a stock has dividend distribution history.
+- **Resilient Data Fetching:** Built-in exponential backoffs and 24-hour intelligent caching to effortlessly bypass Yahoo Finance rate limits.
 
 ## Tech Stack
 
 - **App framework:** Streamlit
-- **Data source:** yfinance
-- **Data processing:** pandas, numpy
+- **Data source:** yfinance (v1.2.1+) & curl_cffi
+- **Data processing:** pandas, pandas-ta
 - **Visualization:** Plotly
-- **Language:** Python 3.12+
+- **Language:** Python 3.12 (Strictly Recommended)
 
 ## Project Structure
 
 ```text
 .
 ├── main.py            # Main Streamlit application
-├── requirements.txt   # Python dependencies
+├── requirements.txt   # Python dependencies 
 ├── run_app.sh         # Helper script to run app locally
 └── README.md
 ```
 
-## Installation
+## Cloud Deployment (Streamlit Community Cloud)
+
+If you are deploying this app to Streamlit Community Cloud, **you must follow these specific steps** to avoid endless builds and rate limits:
+
+1. Connect your GitHub repository to Streamlit Cloud.
+2. Under your App Settings on Streamlit Cloud, go to **Advanced** settings.
+3. Change the **Python Version** to `3.12`. 
+   > *Note: If you use higher experimental versions (like 3.14), the app will take over 20 minutes to compile because `pandas` and other libraries will need to be built from scratch without pre-compiled wheels.*
+4. Deploy the app. The optimized `requirements.txt` will instantly fetch lightweight dependencies.
+
+## Installation & Local Run
 
 1. Clone the repository:
 
@@ -49,10 +59,10 @@ git clone https://github.com/AHNEMER/rami-Al-stocks.git
 cd rami-Al-stocks
 ```
 
-2. Create and activate a virtual environment:
+2. Create and activate a virtual environment (using Python 3.12):
 
 ```bash
-python3 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 ```
 
@@ -62,55 +72,19 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Run Locally
-
-Recommended:
+4. Run the app:
 
 ```bash
 streamlit run main.py
 ```
-
-Or with Python module:
-
-```bash
-python -m streamlit run main.py
-```
-
 Then open the local URL shown in terminal (usually `http://localhost:8501`).
-
-## Usage
-
-- Select a stock from the sidebar watchlist.
-- Review recommendation card and technical summary.
-- Inspect chart behavior around yearly average and Bollinger boundaries.
-- Use signals as decision support, not as guaranteed trading advice.
-
-## Important Notes
-
-- Market data is fetched from Yahoo Finance and may occasionally be delayed or unavailable.
-- The app is intended for educational and decision-support use.
-- Not financial advice.
 
 ## Troubleshooting
 
-- **App does not start:** Make sure virtual environment is activated and dependencies are installed.
-- **No data returned for a symbol:** Try again later or test another ticker.
-- **Module import errors:** Re-run `pip install -r requirements.txt`.
-
-## GitHub Publishing Checklist
-
-- Ensure `venv/` is excluded in `.gitignore` (already included).
-- Commit only source files and config files (not local environments).
-- Add screenshots to this README (recommended) for better presentation.
-
-## Roadmap Ideas
-
-- Add multilingual toggle (Arabic/English).
-- Add unit tests for recommendation logic.
-- Add export options for analysis snapshots.
-- Add optional alerts and watchlist persistence.
+- **YFRateLimitError (Too Many Requests):** Handled natively by the app via `curl_cffi` backend and exponential backoff loops. If it still occurs, wait 2-3 minutes. The data leverages a 24-hour cache limit.
+- **App taking forever to deploy on Cloud:** Check your Python version. Ensure it is set exactly to `3.12` in the Cloud settings.
+- **YFDataException or Compatibility issues:** Ensure `curl_cffi` is in your `requirements.txt` and you are using `yfinance>=1.2.1`.
 
 ## License
 
-Choose and add a license file (for example, MIT) before public release.
-
+This project is open for educational and decision-support use. Not financial advice.
