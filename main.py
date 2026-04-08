@@ -565,6 +565,7 @@ SAUDI_STOCKS = {
 # --- State Management ---
 if "selected_ticker" not in st.session_state:
     st.session_state.selected_ticker = "1120.SR"
+    st.session_state.previous_ticker = "1120.SR"
 # Sidebar search state
 if "sidebar_search_query" not in st.session_state:
     st.session_state.sidebar_search_query = ""
@@ -717,8 +718,6 @@ with st.sidebar:
 
                         if st.button(btn_label, key=f"btn_{dcode}", use_container_width=True):
                             st.session_state.selected_ticker = list_ticker
-                            if is_mobile:
-                                st.session_state.close_mobile_sidebar = True
                             st.rerun()
                             
                 except Exception as e:
@@ -726,6 +725,11 @@ with st.sidebar:
         else:
             st.info("عفواً، مزود البيانات مشغول حالياً (تم تجاوز الحد المسموح).نعرض البيانات المخبأة أو يرجى المحاولة بعد قليل.")
 # --- Main Logic ---
+if st.session_state.get("previous_ticker") != st.session_state.selected_ticker:
+    if is_mobile:
+        st.session_state.close_mobile_sidebar = True
+    st.session_state.previous_ticker = st.session_state.selected_ticker
+
 col1, col2 = st.columns([1, 4]) # Adjusted columns slightly since sidebar does all the navigation now
 with col2:
     ticker = st.session_state.selected_ticker
