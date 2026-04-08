@@ -7,4 +7,4 @@ cd "$(dirname "$0")"
 source venv/bin/activate
 
 # Run the Streamlit app
-python -m streamlit run main.py
+python -m streamlit run app.py
