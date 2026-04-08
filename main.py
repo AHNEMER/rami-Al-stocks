@@ -160,7 +160,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 st.title("🏹📈 رامي السهم")
-st.markdown("<p class='app-subtitle' style='font-size: 1.2rem; color: #4b5563; margin-top:-15px'>تحليل الارتداد و متوسط السعر لأسهم تداول.</p>", unsafe_allow_html=True)
+st.markdown("<p class='app-subtitle' style='font-size: 1.2rem; color: #4b5563; margin-top:-15px'> تحليل الارتداد و متوسط السعر لأسهم تداول للاستثمار طويل المدى.</p>", unsafe_allow_html=True)
 
 # --- Helper Functions ---
 @st.cache_data(ttl=86400)
