@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import textwrap
 import streamlit.components.v1 as components
-import requests
+
 # --- Configuration & UI Setup ---
 st.set_page_config(page_title="رامي السهم", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
 # Injecting Custom CSS for a Premium Look
@@ -149,12 +149,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.title("🏹📈 رامي السهم")
 st.markdown("<p class='app-subtitle' style='font-size: 1.2rem; color: #4b5563; margin-top:-15px'>تحليل الارتداد و متوسط السعر لأسهم تداول.</p>", unsafe_allow_html=True)
-# --- Session with User-Agent to bypass rate limit ---
-_session = requests.Session()
-_session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-})
 
 # --- Helper Functions ---
 @st.cache_data(ttl=3600)
@@ -163,7 +157,7 @@ def fetch_data(ticker_symbol: str, years=1):
     start_date = end_date - timedelta(days=years*365)
     
     try:
-        data = st_yf.download(ticker_symbol, start=start_date, end=end_date, progress=False, actions=True, session=_session)
+        data = st_yf.download(ticker_symbol, start=start_date, end=end_date, progress=False, actions=True)
         if data.empty:
             return None
         return data
@@ -642,7 +636,16 @@ with st.sidebar:
         # yfinance caching wrapper for the batch download
         @st.cache_data(ttl=3600)
         def fetch_batch(tickers):
-            return st_yf.download(tickers, start=start_date, end=end_date, progress=False, group_by='ticker', actions=True, session=_session)
+            # yfinance will now automatically use curl_cffi internally
+            return st_yf.download(
+                tickers, 
+                start=start_date, 
+                end=end_date, 
+                progress=False, 
+                group_by='ticker', 
+                actions=True,
+                threads=True
+            )
         
         batch_data = fetch_batch(all_tickers)
         
