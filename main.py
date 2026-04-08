@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import textwrap
 import streamlit.components.v1 as components
+import time
 
 # --- Configuration & UI Setup ---
 st.set_page_config(page_title="رامي السهم", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
@@ -151,18 +152,23 @@ st.title("🏹📈 رامي السهم")
 st.markdown("<p class='app-subtitle' style='font-size: 1.2rem; color: #4b5563; margin-top:-15px'>تحليل الارتداد و متوسط السعر لأسهم تداول.</p>", unsafe_allow_html=True)
 
 # --- Helper Functions ---
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=86400)
 def fetch_data(ticker_symbol: str, years=1):
     end_date = datetime.now()
     start_date = end_date - timedelta(days=years*365)
     
-    try:
-        data = st_yf.download(ticker_symbol, start=start_date, end=end_date, progress=False, actions=True)
-        if data.empty:
-            return None
-        return data
-    except Exception as e:
-        return None
+    for attempt in range(3):
+        try:
+            data = st_yf.download(ticker_symbol, start=start_date, end=end_date, progress=False, actions=True)
+            if data is not None and not data.empty:
+                return data
+        except Exception as e:
+            if "Rate limited" in str(e) or "429" in str(e):
+                time.sleep(5 * (attempt + 1))
+            else:
+                st.warning(f"Fetch error: {e}")
+                break
+    return None
 def calculate_indicators(df):
     if df is None or len(df) < 20:
         return None
@@ -634,18 +640,29 @@ with st.sidebar:
         start_date = datetime.now() - timedelta(days=365)
         end_date = datetime.now()
         # yfinance caching wrapper for the batch download
-        @st.cache_data(ttl=3600)
+        @st.cache_data(ttl=86400)
         def fetch_batch(tickers):
-            # yfinance will now automatically use curl_cffi internally
-            return st_yf.download(
-                tickers, 
-                start=start_date, 
-                end=end_date, 
-                progress=False, 
-                group_by='ticker', 
-                actions=True,
-                threads=True
-            )
+            for attempt in range(3):
+                try:
+                    # yfinance will now automatically use curl_cffi internally
+                    data = st_yf.download(
+                        tickers, 
+                        start=start_date, 
+                        end=end_date, 
+                        progress=False, 
+                        group_by='ticker', 
+                        actions=True,
+                        threads=True
+                    )
+                    if data is not None and not data.empty:
+                        return data
+                except Exception as e:
+                    if "Rate limited" in str(e) or "429" in str(e):
+                        time.sleep(5 * (attempt + 1))
+                    else:
+                        st.warning(f"Fetch batch error: {e}")
+                        break
+            return None
         
         batch_data = fetch_batch(all_tickers)
         
@@ -694,7 +711,7 @@ with st.sidebar:
                 except Exception as e:
                     pass
         else:
-            st.error("تعذر تحميل بيانات الأسهم حالياً. تأكد من الاتصال بالإنترنت ثم حاول مرة أخرى.")
+            st.info("عفواً، مزود البيانات مشغول حالياً (تم تجاوز الحد المسموح).نعرض البيانات المخبأة أو يرجى المحاولة بعد قليل.")
 # --- Main Logic ---
 col1, col2 = st.columns([1, 4]) # Adjusted columns slightly since sidebar does all the navigation now
 with col2:
