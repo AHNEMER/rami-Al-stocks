@@ -517,7 +517,7 @@ with st.sidebar:
             break
             
     st.write("---")
-    st.header("📋 قائمة المراقبة")
+    st.header("📋 قائمة الاسهم")
     selected_option = st.selectbox("اختر سهماً من تداول:", options, index=current_idx)
     # Extract the 4 digit code inside the parentheses
     sel_code = selected_option.split('(')[-1].strip(')')
