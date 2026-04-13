@@ -83,13 +83,13 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    .strong-buy { background-color: #004d00 !important; color: white !important; padding: 15px; border-radius: 10px; }
-    .speed-trap { background-color: #ff8c00 !important; color: black !important; padding: 15px; border-radius: 10px; }
-    .buy { background-color: #228b22 !important; color: white !important; padding: 15px; border-radius: 10px; }
-    .strong-sell { background-color: #8b0000 !important; color: white !important; padding: 15px; border-radius: 10px; }
+    .strong-buy { background-color: #16a34a !important; color: white !important; padding: 15px; border-radius: 10px; }
+    .speed-trap { background-color: #ffd700 !important; color: black !important; padding: 15px; border-radius: 10px; }
+    .buy { background-color: #16a34a !important; color: white !important; padding: 15px; border-radius: 10px; }
+    .strong-sell { background-color: #dc2626 !important; color: white !important; padding: 15px; border-radius: 10px; }
     .watch { background-color: #ffd700 !important; color: black !important; padding: 15px; border-radius: 10px; }
-    .neutral { background-color: #4b5563 !important; color: white !important; padding: 15px; border-radius: 10px; }
-    .hold { background-color: #00008b !important; color: white !important; padding: 15px; border-radius: 10px; }
+    .neutral { background-color: #f3f4f6 !important; color: #111827 !important; padding: 15px; border-radius: 10px; }
+    .hold { background-color: #2563eb !important; color: white !important; padding: 15px; border-radius: 10px; }
     .rec-title {
         font-size: 2.5rem;
         font-weight: 800;
@@ -226,8 +226,8 @@ def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper,
     elif current_price > bb_upper:
         if current_price >= yearly_sma:
             rec_class = "strong-sell"
-            rec_title = "بيع (تخفيف وجني أرباح) 🔴"
-            rec_text = "السهم طلع فوق سقف قناة الارتداد بزيادة، والحين صار 'متضخم' ولازم يرجع يصحح داخل القناة. بيع قبل يرتد عليك السعر."
+            rec_title = "سعر متضخم (فرصة للبيع) 🔴"
+            rec_text = "السهم طلع فوق سقف قناة الارتداد بزيادة، والحين صار 'متضخم' ولازم يرجع يصحح داخل القناة. قد تكون فرصة جيدة للبيع قبل نزول السعر ."
             emoji = "🔴"
         else:
             rec_class = "speed-trap"
@@ -284,95 +284,7 @@ def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper,
                 emoji = "🟡"
 
     return rec_class, rec_title, rec_text, emoji    # الحالة الافتراضية
-    rec_class = "neutral"
-    rec_title = "خلك مراقب"
-    rec_text = "السعر حالياً في منطقة هادية، لا تستعجل وانتظر إشارة أوضح."
-    emoji = "⚪"
-
-    if pd.isna(current_price) or any(pd.isna([yearly_sma, bb_lower, bb_middle, bb_upper])):
-        return rec_class, rec_title, rec_text, emoji
-
-    # --- أدوات قياس المسافات ---
-    channel_width = bb_upper - bb_lower
-    near_sma = abs(current_price - yearly_sma) / channel_width < 0.08
-    near_upper = (bb_upper - current_price) / channel_width < 0.08
-
-    # --- الحالة 1: السعر طايح تحت القناة (فرصة شراء) ---
-    if current_price < bb_lower:
-        if current_price < yearly_sma:
-            rec_class = "strong-buy"
-            rec_title = "شراء قوي (لقطة ذهبية) 🟢🟢"
-            rec_text = "السعر واصل لقاع تاريخي ورخيص مرة مقارنة بالسنة الماضية. هذي منطقة صيد وتجميع ممتازة."
-            emoji = "🟢🟢"
-        else:
-            rec_class = "buy"
-            rec_title = "شراء (نزول مؤقت) 🟢"
-            rec_text = "السهم أصلاً في مسار صاعد، وهذا النزول مجرد ريست (تخفيف) وفرصة دخول ممتازة قبل يرجع يطير."
-            emoji = "🟢"
-
-    # --- الحالة 2: السعر طار فوق القناة (منطقة بيع) ---
-    elif current_price > bb_upper:
-        if current_price >= yearly_sma:
-            rec_class = "strong-sell"
-            rec_title = "بيع (خروج وجني أرباح) 🔴"
-            rec_text = "السهم تضخم بزيادة وطار فوق حدوده الطبيعية. انتبه لا تتعلق، الأفضل تبيع وتجني أرباحك الحين."
-            emoji = "🔴"
-        else:
-            rec_class = "speed-trap"
-            rec_title = "انتبه (فخ للمشترين) 🟡"
-            rec_text = "السهم فز فزة قوية بس لسه وضعه العام ضعيف. خلك حذر، احتمال يكون مجرد ارتداد وهمي للتصريف."
-            emoji = "🟡"
-
-    # --- الحالة 3: السعر في النص التحت من القناة ---
-    elif bb_lower <= current_price <= bb_middle:
-        if near_sma:
-            rec_class = "buy"
-            rec_title = "شراء (بداية انطلاقة) 🟢"
-            rec_text = "السعر قاعد يحاول يتخطى حاجز مهم. إذا عداه، بيعطينا فزة قوية، الدخول الحين يعتبر ضربة معلم."
-            emoji = "🟢"
-        elif current_price < yearly_sma:
-            rec_class = "buy"
-            rec_title = "تجميع (للمستثمر الصبور) 🟢"
-            rec_text = "السعر في مناطق هادية ورخيصة. اللي يبي يشتري ويصبر شوي، هذي المناطق مناسبة جداً."
-            emoji = "🟢"
-        else:
-            rec_class = "buy"
-            rec_title = "دخول آمن 🟢"
-            rec_text = "السهم محترم مساره الصاعد ومرتاح في مناطق شراء آمنة ومدروسة."
-            emoji = "🟢"
-
-    # --- الحالة 4: السعر في النص الفوق من القناة ---
-    elif bb_middle < current_price <= bb_upper:
-        if current_price >= yearly_sma:
-            if near_sma:
-                rec_class = "buy"
-                rec_title = "دخول (تأكيد المسار) 🟢"
-                rec_text = "السهم للتو بدأ يتحرك بإيجابية قوية. فرصة دخول للي ما لحق، مع وقف خسارة قريب."
-                emoji = "🟢"
-            elif near_upper:
-                rec_class = "hold"
-                rec_title = "انتظار (خلك على المدرج) 🔵"
-                rec_text = "إذا السهم معك، امسك فيه. بس إذا بتشتري جديد، انتظر شوي لين يهدأ السعر لأنه قريب من السقف."
-                emoji = "🔵"
-            else:
-                rec_class = "hold"
-                rec_title = "استمرار (مواصلة الصعود) 🔵"
-                rec_text = "السهم وضعه بطل وماشي صح. للمالك: استمر وفالك الربح. للمشتري: السعر مهوب شين بس انتظر تراجع بسيط أفضل."
-                emoji = "🔵"
-        else:
-            if near_sma:
-                rec_class = "watch"
-                rec_title = "مراقبة (اختبار قوة) 🟡"
-                rec_text = "السهم يحاول يرجع لقوته بس لسه قدامه عقبة. لا تستعجل بالدخول لين نتأكد إنه ثبت فوق المعدل."
-                emoji = "🟡"
-            else:
-                rec_class = "watch"
-                rec_title = "مراقبة (تعافي بسيط) 🟡"
-                rec_text = "السهم بدأ يتنفس ويرتفع، بس لسه ما أعطى إشارة دخول أكيدة. خلك متابع."
-                emoji = "🟡"
-
-    return rec_class, rec_title, rec_text, emoji
-
+   
 # --- Info Modal (How we analyze) ---
 @st.dialog("ℹ️ كيف نحلل لك السهم؟", width="large")
 def show_analysis_method_modal():
