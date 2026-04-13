@@ -17,7 +17,7 @@ def is_mobile_device():
         return False
 
 is_mobile = is_mobile_device()
-init_state = "collapsed" if is_mobile else "expanded"
+init_state = "expanded" if is_mobile else "expanded"
 
 st.set_page_config(page_title="رامي السهم", page_icon="📈", layout="wide", initial_sidebar_state=init_state)
 # Injecting Custom CSS for a Premium Look
