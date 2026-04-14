@@ -287,17 +287,19 @@ def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper,
                 rec_title = "مواصلة صعود 🔵"
                 rec_text = "السهم وضعه ممتاز وقاعد يمشي بثبات بوسط القناة. المالك يمسك سهمه، و لا ينصح بالدخول."
                 emoji = "🔵"
-        else:
+        else: # This block triggers when current_price < yearly_sma
             if near_sma:
-                rec_class = "watch"
-                rec_title = "مراقبة (اختبار سقف) 🟡"
-                rec_text = "السعر يحاول يطلع للنص الفوق من قناة الارتداد بس العزم لسه يبيله تأكيد. خلك متابع لا تستعجل."
-                emoji = "🟡"
+                # The price is approaching the SMA from below
+                rec_class = "buy"
+                rec_title = "شراء (اختراق المتوسط) 🟢"
+                rec_text = "السعر تحت المعدل السنوي وقريب من اختراقه. هذي منطقة شراء استراتيجية لأن السهم بدأ يتعافى ولسه ما تضخم سعره."
+                emoji = "🟢"
             else:
-                rec_class = "watch"
-                rec_title = "مراقبة (تعافي) 🟡"
-                rec_text = "فيه محاولات ارتداد من القاع بس لسه السهم بوسط قناة الارتداد وما أعطى إشارة دخول قوية."
-                emoji = "🟡"
+                # The price is in the upper channel but still well below the SMA
+                rec_class = "buy"
+                rec_title = "تجميع (بداية تعافي) 🟢"
+                rec_text = "السهم يتداول تحت سعره العادل سنويًا وبدأ يظهر إيجابية في قناة الارتداد. فرصة جيدة للتجميع قبل العودة للمستويات العليا."
+                emoji = "🟢"
 
     return rec_class, rec_title, rec_text, emoji    # الحالة الافتراضية
    
