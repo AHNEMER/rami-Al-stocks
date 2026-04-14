@@ -194,6 +194,22 @@ def calculate_indicators(df):
     df['BB_Lower'] = df['BB_SMA'] - (2.0 * df['BB_STD'])
     
     return df
+
+
+def get_recommendation_emoji(rec_class: str) -> str:
+    emoji_map = {
+        "strong-buy": "🟢",
+        "buy": "🟢",
+        "hold": "🔵",
+        "watch": "🟡",
+        "speed-trap": "🟡",
+        "strong-sell": "🔴",
+        "neutral": "⚪",
+        "data_error": "⚠️",
+    }
+    return emoji_map.get(rec_class, "⚪")
+
+
 def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable):
     # الحالة الافتراضية
     rec_class = "neutral"
@@ -485,6 +501,8 @@ if "sidebar_search_applied" not in st.session_state:
     st.session_state.sidebar_search_applied = False
 if "sidebar_filtered_codes" not in st.session_state:
     st.session_state.sidebar_filtered_codes = None
+if "sidebar_rec_by_ticker" not in st.session_state:
+    st.session_state.sidebar_rec_by_ticker = {}
 # --- Sidebar Watchlist ---
 with st.sidebar:
     # Temporarily disable search UI + filtering
@@ -546,6 +564,7 @@ with st.sidebar:
     )
     
     with st.spinner("جاري تحميل قائمة المراقبة..."):
+        st.session_state.sidebar_rec_by_ticker = {}
         # Fetch TASI first for market stability
         tasi_data = fetch_data("^TASI.SR")
         tasi_stable = "unstable"
@@ -609,7 +628,9 @@ with st.sidebar:
                         bb_middle = float(df['BB_SMA'].iloc[-1].item() if isinstance(df['BB_SMA'].iloc[-1], pd.Series) else df['BB_SMA'].iloc[-1])
                         bb_upper = float(df['BB_Upper'].iloc[-1].item() if isinstance(df['BB_Upper'].iloc[-1], pd.Series) else df['BB_Upper'].iloc[-1])
                         
-                        rec_class, rec_title, _, emoji = get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                        rec_class, rec_title, rec_text, _ = get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                        emoji = get_recommendation_emoji(rec_class)
+                        st.session_state.sidebar_rec_by_ticker[list_ticker] = (rec_class, rec_title, rec_text, emoji)
                         
                         pays_dividends = 'Dividends' in df.columns and bool((df['Dividends'] > 0).values.any())
                         div_flag = " 💰" if pays_dividends else ""
@@ -698,6 +719,12 @@ with col2:
             emoji = "⚪"
             if pd.notna(yearly_sma) and pd.notna(bb_lower) and pd.notna(bb_upper) and pd.notna(bb_middle):
                 rec_class, rec_title, rec_text, emoji = get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                emoji = get_recommendation_emoji(rec_class)
+
+            # Use same recommendation state shown in sidebar to avoid any mismatch.
+            sidebar_rec = st.session_state.get("sidebar_rec_by_ticker", {}).get(ticker)
+            if sidebar_rec:
+                rec_class, rec_title, rec_text, emoji = sidebar_rec
 
             avg_delta_pct = None
             if pd.notna(yearly_sma) and yearly_sma != 0:
