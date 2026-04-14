@@ -194,26 +194,39 @@ def calculate_indicators(df):
     df['BB_Lower'] = df['BB_SMA'] - (2.0 * df['BB_STD'])
     
     return df
+def get_recommendation_emoji(rec_class: str) -> str:
+    emoji_by_class = {
+        "strong-buy": "🟢🟢",
+        "buy": "🟢",
+        "hold": "🔵",
+        "watch": "🟡",
+        "speed-trap": "🟡",
+        "strong-sell": "🔴",
+        "neutral": "⏳",
+        "data_error": "⚠️",
+    }
+    return emoji_by_class.get(rec_class, "⏳")
+
+
 def get_buy_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable):
     # Default: Not a buy zone
     rec_class = "neutral"
     rec_title = "خلك متفرج"
     rec_text = "السعر أعلى من المعدل السنوي؛ السهم حالياً يعتبر 'غالي' فنياً. انتظر تصحيح تحت المعدل السنوي."
-    emoji = "⏳"
+    emoji = get_recommendation_emoji(rec_class)
 
     # NaN Check
     if pd.isna(current_price) or any(pd.isna([yearly_sma, bb_lower, bb_middle, bb_upper])):
-        return "data_error", "نقص بيانات", "لا توجد بيانات كافية", "⚠️"
+        return "data_error", "نقص بيانات", "لا توجد بيانات كافية", get_recommendation_emoji("data_error")
 
     # --- فلتر القيمة: لا نشتري إلا إذا كان السعر تحت المعدل السنوي ---
     if current_price < yearly_sma:
-        
         # 1. صيدة القاع (ارتداد من الحد السفلي)
         if current_price <= bb_lower:
             rec_class = "strong-buy"
             rec_title = "شراء (قاع القناة) 🟢🟢"
             rec_text = "السعر تحت المعدل السنوي وضرب قاع بولنجر. هذي منطقة ارتداد تاريخية وقوية."
-            emoji = "💎"
+            emoji = get_recommendation_emoji(rec_class)
 
         # 2. بداية انطلاق (اختراق خط المنتصف)
         elif bb_lower < current_price <= bb_middle:
@@ -222,27 +235,29 @@ def get_buy_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_up
                 rec_class = "buy"
                 rec_title = "شراء (تأكيد ارتداد) 🟢"
                 rec_text = "السعر بدأ يرتد من القاع وقرب يخترق منتصف القناة. دخول آمن بتأكيد العزم."
-                emoji = "🚀"
+                emoji = get_recommendation_emoji(rec_class)
             else:
                 rec_class = "buy"
                 rec_title = "تجميع هادئ 🟢"
                 rec_text = "السعر في مناطق رخيصة تحت المعدل السنوي وبدأ يستقر فوق قاع بولنجر."
-                emoji = "🔋"
+                emoji = get_recommendation_emoji(rec_class)
 
         # 3. اقتراب من السقف (رغم أنه تحت السنوي)
         elif bb_middle < current_price <= bb_upper:
             rec_class = "hold"
             rec_title = "تريّث (قرب سقف فرعي) 🔵"
             rec_text = "رغم أن السعر رخيص سنوياً، إلا أنه وصل لسقف قناة بولنجر القصيرة. انتظر تهدئة بسيطة للدخول."
-            emoji = "✋"
+            emoji = get_recommendation_emoji(rec_class)
 
     # --- فلتر استثنائي: إذا السوق (تاسي) غير مستقر ---
-    if not tasi_stable and rec_class in ["buy", "strong-buy"]:
+    market_is_stable = tasi_stable in ("stable", "cautious", True)
+    if (not market_is_stable) and rec_class in ["buy", "strong-buy"]:
         rec_title += " (حذر - تاسي)"
         rec_text = "المؤشرات الفنية للسهم ممتازة، لكن وضع السوق العام (تاسي) غير مستقر. ادخل بدفعات."
-        emoji = "⚠️"
+        emoji = get_recommendation_emoji("watch")
 
     return rec_class, rec_title, rec_text, emoji
+   
 # --- Info Modal (How we analyze) ---
 @st.dialog("ℹ️ كيف نحلل لك السهم؟", width="large")
 def show_analysis_method_modal():
@@ -567,7 +582,8 @@ with st.sidebar:
                         bb_middle = float(df['BB_SMA'].iloc[-1].item() if isinstance(df['BB_SMA'].iloc[-1], pd.Series) else df['BB_SMA'].iloc[-1])
                         bb_upper = float(df['BB_Upper'].iloc[-1].item() if isinstance(df['BB_Upper'].iloc[-1], pd.Series) else df['BB_Upper'].iloc[-1])
                         
-                        rec_class, rec_title, _, emoji = get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                        rec_class, rec_title, _, emoji = get_buy_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                        emoji = get_recommendation_emoji(rec_class)
                         
                         pays_dividends = 'Dividends' in df.columns and bool((df['Dividends'] > 0).values.any())
                         div_flag = " 💰" if pays_dividends else ""
@@ -655,7 +671,8 @@ with col2:
             rec_text = ""
             emoji = "⚪"
             if pd.notna(yearly_sma) and pd.notna(bb_lower) and pd.notna(bb_upper) and pd.notna(bb_middle):
-                rec_class, rec_title, rec_text, emoji = get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                rec_class, rec_title, rec_text, emoji = get_buy_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable)
+                emoji = get_recommendation_emoji(rec_class)
 
             avg_delta_pct = None
             if pd.notna(yearly_sma) and yearly_sma != 0:
