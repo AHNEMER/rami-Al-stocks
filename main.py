@@ -715,7 +715,10 @@ with col2:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            st.caption("⚠️  تنبيه: هذا المحتوى مجرد توقع بناء على تحليلات بسيطة، وليس توصية استثمارية رسمية أو دعوة للبيع/الشراء.")
+            st.markdown(
+                "<div style='text-align: right; color: #6b7280; font-size: 0.9rem;'>⚠️ تنبيه: هذا المحتوى مجرد توقع بناء على تحليلات بسيطة، وليس توصية استثمارية رسمية أو دعوة للبيع/الشراء.</div>",
+                unsafe_allow_html=True,
+            )
             # --- Plotly Chart ---
             st.subheader(f"سجل الأسعار والمؤشرات - {ticker}")
             fig = go.Figure()
