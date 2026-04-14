@@ -194,97 +194,55 @@ def calculate_indicators(df):
     df['BB_Lower'] = df['BB_SMA'] - (2.0 * df['BB_STD'])
     
     return df
-def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable):
-    # الحالة الافتراضية
+def get_buy_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper, tasi_stable):
+    # Default: Not a buy zone
     rec_class = "neutral"
-    rec_title = "خلك مراقب"
-    rec_text = "السعر حالياً بوسط قناة الارتداد، لا هو رخيص نشتريه ولا هو غالي نبيعه. انتظر إشارة أوضح."
-    emoji = "⚪"
+    rec_title = "خلك متفرج"
+    rec_text = "السعر أعلى من المعدل السنوي؛ السهم حالياً يعتبر 'غالي' فنياً. انتظر تصحيح تحت المعدل السنوي."
+    emoji = "⏳"
 
+    # NaN Check
     if pd.isna(current_price) or any(pd.isna([yearly_sma, bb_lower, bb_middle, bb_upper])):
-        return rec_class, rec_title, rec_text, emoji
+        return "data_error", "نقص بيانات", "لا توجد بيانات كافية", "⚠️"
 
-    # --- أدوات قياس المسافات ---
-    channel_width = bb_upper - bb_lower
-    near_sma = abs(current_price - yearly_sma) / channel_width < 0.08
-    near_upper = (bb_upper - current_price) / channel_width < 0.08
-
-    # --- الحالة 1: تحت حدود القناة (ارتداد صاعد متوقع) ---
-    if current_price < bb_lower:
-        if current_price < yearly_sma:
+    # --- فلتر القيمة: لا نشتري إلا إذا كان السعر تحت المعدل السنوي ---
+    if current_price < yearly_sma:
+        
+        # 1. صيدة القاع (ارتداد من الحد السفلي)
+        if current_price <= bb_lower:
             rec_class = "strong-buy"
-            rec_title = "شراء (صيدة ذهبية) 🟢🟢"
-            rec_text = "السعر ضرب قاع قناة الارتداد وطلع برا حدوده الطبيعية، يعني السهم الحين 'منضغط' ومستوي للارتداد فوق. فرصة صيد واضحة."
-            emoji = "🟢🟢"
-        else:
-            rec_class = "buy"
-            rec_title = "شراء (تعديل مسار) 🟢"
-            rec_text = "السهم لمس قاع قناة الارتداد وهو في مسار صاعد أصلاً؛ هذا النزول مجرد ريست عشان يجمع قوى ويرتد للأعلى."
-            emoji = "🟢"
+            rec_title = "شراء (قاع القناة) 🟢🟢"
+            rec_text = "السعر تحت المعدل السنوي وضرب قاع بولنجر. هذي منطقة ارتداد تاريخية وقوية."
+            emoji = "💎"
 
-    # --- الحالة 2: فوق حدود القناة (ارتداد هابط متوقع) ---
-    elif current_price > bb_upper:
-        if current_price >= yearly_sma:
-            rec_class = "strong-sell"
-            rec_title = "سعر متضخم (فرصة للبيع) 🔴"
-            rec_text = "السهم طلع فوق سقف قناة الارتداد بزيادة، والحين صار 'متضخم' ولازم يرجع يصحح داخل القناة. قد تكون فرصة جيدة للبيع قبل نزول السعر ."
-            emoji = "🔴"
-        else:
-            rec_class = "speed-trap"
-            rec_title = "انتبه (ارتداد وهمي) 🟡"
-            rec_text = "السعر حاول يطمر فوق قناة الارتداد بس لسه وضعه السنوي ضعيف. غالباً بيرجع يصحح بسرعة، خلك حذر."
-            emoji = "🟡"
-
-    # --- الحالة 3: النص التحت من قناة الارتداد ---
-    elif bb_lower <= current_price <= bb_middle:
-        if near_sma:
-            rec_class = "buy"
-            rec_title = "شراء (اختراق قريب) 🟢"
-            rec_text = "السعر قاعد يزحف من قاع قناة الارتداد وواصل لمنطقة مفصلية. لو اخترقها بيعطي فزة قوية، الدخول الحين استباقي وذكي."
-            emoji = "🟢"
-        elif current_price < yearly_sma:
-            rec_class = "buy"
-            rec_title = "تجميع (أسعار هادية) 🟢"
-            rec_text = "السعر قريب من قاع قناة الارتداد، هذي مناطق تجميع هادية وآمنة لأن نسبة النزول منها صارت ضعيفة."
-            emoji = "🟢"
-        else:
-            rec_class = "buy"
-            rec_title = "دخول مضاربي 🟢"
-            rec_text = "السهم ارتد من القاع وقاعد يتنفس فوق، وضعه إيجابي طالما إنه داخل قناة الارتداد وفي مسار صاعد."
-            emoji = "🟢"
-
-    # --- الحالة 4: النص الفوق من قناة الارتداد ---
-    elif bb_middle < current_price <= bb_upper:
-        if current_price >= yearly_sma:
-            if near_sma:
+        # 2. بداية انطلاق (اختراق خط المنتصف)
+        elif bb_lower < current_price <= bb_middle:
+            # نتحقق إذا كان السعر قريب من المنتصف للاختراق
+            if (bb_middle - current_price) / (bb_middle - bb_lower) < 0.15:
                 rec_class = "buy"
-                rec_title = "دخول (تأكيد القوة) 🟢"
-                rec_text = "السعر ارتد فوق المتوسط وبدأ ياخذ عزم. هذي بداية موجة صاعدة جديدة داخل قناة الارتداد."
-                emoji = "🟢"
-            elif near_upper:
-                rec_class = "hold"
-                rec_title = "انتظار (قرب السقف) 🔵"
-                rec_text = "السعر الحين قرب سقف قناة الارتداد، احتمال يضرب فيه ويرجع يصحح. للمالك خلك مستعد، وللمشتري انتظر تراجع أفضل."
-                emoji = "🔵"
+                rec_title = "شراء (تأكيد ارتداد) 🟢"
+                rec_text = "السعر بدأ يرتد من القاع وقرب يخترق منتصف القناة. دخول آمن بتأكيد العزم."
+                emoji = "🚀"
             else:
-                rec_class = "hold"
-                rec_title = "مواصلة الصعود 🔵"
-                rec_text = "السهم وضعه ممتاز وقاعد يمشي بثبات بوسط القناة. المالك يمسك سهمه، والمشتري راحت عليه أفضل نقطة دخول."
-                emoji = "🔵"
-        else:
-            if near_sma:
-                rec_class = "watch"
-                rec_title = "مراقبة (اختبار سقف) 🟡"
-                rec_text = "السعر يحاول يطلع للنص الفوق من قناة الارتداد بس العزم لسه يبيله تأكيد. خلك متابع لا تستعجل."
-                emoji = "🟡"
-            else:
-                rec_class = "watch"
-                rec_title = "مراقبة (تعافي) 🟡"
-                rec_text = "فيه محاولات ارتداد من القاع بس لسه السهم بوسط قناة الارتداد وما أعطى إشارة دخول قوية."
-                emoji = "🟡"
+                rec_class = "buy"
+                rec_title = "تجميع هادئ 🟢"
+                rec_text = "السعر في مناطق رخيصة تحت المعدل السنوي وبدأ يستقر فوق قاع بولنجر."
+                emoji = "🔋"
 
-    return rec_class, rec_title, rec_text, emoji    # الحالة الافتراضية
-   
+        # 3. اقتراب من السقف (رغم أنه تحت السنوي)
+        elif bb_middle < current_price <= bb_upper:
+            rec_class = "hold"
+            rec_title = "تريّث (قرب سقف فرعي) 🔵"
+            rec_text = "رغم أن السعر رخيص سنوياً، إلا أنه وصل لسقف قناة بولنجر القصيرة. انتظر تهدئة بسيطة للدخول."
+            emoji = "✋"
+
+    # --- فلتر استثنائي: إذا السوق (تاسي) غير مستقر ---
+    if not tasi_stable and rec_class in ["buy", "strong-buy"]:
+        rec_title += " (حذر - تاسي)"
+        rec_text = "المؤشرات الفنية للسهم ممتازة، لكن وضع السوق العام (تاسي) غير مستقر. ادخل بدفعات."
+        emoji = "⚠️"
+
+    return rec_class, rec_title, rec_text, emoji
 # --- Info Modal (How we analyze) ---
 @st.dialog("ℹ️ كيف نحلل لك السهم؟", width="large")
 def show_analysis_method_modal():
@@ -715,6 +673,7 @@ with col2:
                 </div>
             </div>
             """, unsafe_allow_html=True)
+            st.caption("⚠️  تنبيه: هذا المحتوى مجرد توقع بناء على تحليلات بسيطة، وليس توصية استثمارية رسمية أو دعوة للبيع/الشراء.")
             # --- Plotly Chart ---
             st.subheader(f"سجل الأسعار والمؤشرات - {ticker}")
             fig = go.Figure()
