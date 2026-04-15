@@ -260,7 +260,7 @@ def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper,
             emoji = "🟢"
         elif current_price < yearly_sma:
             rec_class = "buy"
-            rec_title = "تجميع (أسعار هادية) 🟢"
+            rec_title = "دخول (أسعار هادية) 🟢"
             rec_text = "السعر قريب من قاع قناة الارتداد، هذي مناطق تجميع هادية وآمنة لأن نسبة النزول منها صارت ضعيفة."
             emoji = "🟢"
         else:
@@ -297,8 +297,8 @@ def get_recommendation(current_price, yearly_sma, bb_lower, bb_middle, bb_upper,
             else:
                 # The price is in the upper channel but still well below the SMA
                 rec_class = "buy"
-                rec_title = "تجميع (بداية تعافي) 🟢"
-                rec_text = "السهم يتداول تحت سعره العادل سنويًا وبدأ يظهر إيجابية في قناة الارتداد. فرصة جيدة للتجميع قبل العودة للمستويات العليا."
+                rec_title = "دخول (بداية تعافي) 🟢"
+                rec_text = "السهم يتداول تحت متوسط السعر السنوي وبدأ يظهر إيجابية في قناة الارتداد. فرصة جيدة قبل العودة للمستويات العليا."
                 emoji = "🟢"
 
     return rec_class, rec_title, rec_text, emoji    # الحالة الافتراضية
